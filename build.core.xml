@@ -1,0 +1,78 @@
+<project basedir=".">
+
+    <property file="build.${user.name}.properties" />
+    <property file="build.properties" />
+    <property file="project.properties" />
+
+    <property name="aapt" value="${sdk.dir}/platform-tools/aapt" />
+    <property name="dx" value="${sdk.dir}/platform-tools/dx" />
+    <property name="android.jar" value="${sdk.dir}/platforms/${target}/android.jar" />
+
+    <path id="android.antlibs">
+        <pathelement path="${sdk.dir}/tools/lib/anttasks.jar" />
+    </path>
+    <path id="ant-contrib.classpath">
+        <fileset dir="${ant-contrib.dir}/lib">
+            <include name="**/*.jar" />
+        </fileset>
+    </path>
+
+    <import file="${sdk.dir}/tools/ant/build.xml" />
+
+    <target name="-make-release">
+
+        <delete dir="${out.absolute.dir}" />
+        <mkdir dir="${out.absolute.dir}" />
+
+        <delete dir="obj" />
+        <mkdir dir="obj" />
+
+        <delete dir="libs/armeabi" />
+        <delete dir="libs/armeabi-v7a" />
+        <delete dir="libs/mips" />
+
+        <delete file="assets/unrar/unrar" />
+        <copy file="unrars/unrar.${unrar.arch}" tofile="assets/unrar/unrar" />
+
+        <echo>${mk}</echo>
+        <loadfile property="mk.content" srcfile="${mk}"></loadfile>
+        <echo>${mk.content}</echo>
+
+        <exec executable="${ndk.dir}/ndk-build" failonerror="true">
+            <arg value="NDK_DEBUG=0" />
+            <arg value="NDK_APPLICATION_MK=${mk}" />
+            <arg value="-j32" />
+        </exec>
+
+        <antcall target="release" />
+
+        <rename src="${out.release.file}" dest="${apk}" />
+
+        <echo>Finish ${version.name} (${version.code}) : ${apk}</echo>
+    </target>
+
+    <target name="-check-release-version">
+        <condition property="legal.version.code">
+            <matches string="${package.version.code}" pattern="${release.version.code.pattern}"/>
+        </condition>
+        <fail unless="legal.version.code" message="${release.version.code.msg}" />
+
+        <condition property="legal.version.name">
+            <matches string="${package.version.name}" pattern="${release.version.name.pattern}"/>
+        </condition>
+        <fail unless="legal.version.name" message="${release.version.name.msg}" />
+    </target>
+
+    <target name="-check-dev-version">
+        <condition property="legal.version.code">
+            <matches string="${package.version.code}" pattern="${dev.version.code.pattern}"/>
+        </condition>
+        <fail unless="legal.version.code" message="${dev.version.code.msg}" />
+
+        <condition property="legal.version.name">
+            <matches string="${package.version.name}" pattern="${dev.version.name.pattern}"/>
+        </condition>
+        <fail unless="legal.version.name" message="${dev.version.name.msg}" />
+    </target>
+
+</project>
